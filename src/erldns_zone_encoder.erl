@@ -19,6 +19,7 @@
 -behavior(gen_server).
 
 -include_lib("dns/include/dns.hrl").
+-include_lib("kernel/include/logger.hrl").
 -include("erldns.hrl").
 
 -export([start_link/0]).
@@ -52,13 +53,13 @@ zone_to_json(Zone) ->
 %% @doc Register a list of encoder modules.
 -spec register_encoders([module()]) -> ok.
 register_encoders(Modules) ->
-  lager:info("Registering custom encoders (modules: ~p)", [Modules]),
+  ?LOG_INFO("Registering custom encoders (modules: ~p)", [Modules]),
   gen_server:call(?SERVER, {register_encoders, Modules}).
 
 %% @doc Register a single encoder module.
 -spec register_encoder(module()) -> ok.
 register_encoder(Module) ->
-  lager:info("Registering customer encoder (module: ~p)", [Module]),
+  ?LOG_INFO("Registering customer encoder (module: ~p)", [Module]),
   gen_server:call(?SERVER, {register_encoder, Module}).
 
 
@@ -123,10 +124,10 @@ encode(Encoders) ->
   end.
 
 encode_record(Record, Encoders) ->
-  lager:debug("Encoding record (record: ~p)", [Record]),
+  ?LOG_DEBUG("Encoding record (record: ~p)", [Record]),
   case encode_record(Record) of
     [] ->
-      lager:debug("Trying custom encoders (encoders: ~p)", [Encoders]),
+      ?LOG_DEBUG("Trying custom encoders (encoders: ~p)", [Encoders]),
       try_custom_encoders(Record, Encoders);
     EncodedRecord -> EncodedRecord
   end.
@@ -168,7 +169,7 @@ encode_record({dns_rr, Name, _, Type = ?DNS_TYPE_CDNSKEY, Ttl, Data}) ->
 encode_record({dns_rr, Name, _, Type = ?DNS_TYPE_RRSIG, Ttl, Data}) ->
   encode_record(Name, Type, Ttl, Data);
 encode_record(Record) ->
-  lager:warning("Unable to encode record (record: ~p)", [Record]),
+  ?LOG_WARNING("Unable to encode record (record: ~p)", [Record]),
   [].
 
 encode_record(Name, Type, Ttl, Data) ->
@@ -183,7 +184,7 @@ encode_record(Name, Type, Ttl, Data) ->
 try_custom_encoders(_Record, []) ->
   {};
 try_custom_encoders(Record, [Encoder|Rest]) ->
-  lager:debug("Trying custom encoder (encoder: ~p)", [Encoder]),
+  ?LOG_DEBUG("Trying custom encoder (encoder: ~p)", [Encoder]),
   case Encoder:encode_record(Record) of
     [] -> try_custom_encoders(Record, Rest);
     EncodedData -> EncodedData
@@ -227,5 +228,5 @@ encode_data({dns_rrdata_cdnskey, Flags, Protocol, Alg, Key, KeyTag}) ->
 encode_data({dns_rrdata_rrsig, TypeCovered, Alg, Labels, OriginalTtl, Expiration, Inception, KeyTag, SignersName, Signature}) ->
   erlang:iolist_to_binary(io_lib:format("~w ~w ~w ~w ~w ~w ~w ~w ~s", [TypeCovered, Alg, Labels, OriginalTtl, Expiration, Inception, KeyTag, SignersName, Signature]));
 encode_data(Data) ->
-  lager:debug("Unable to encode rrdata (data: ~p)", [Data]),
+  ?LOG_DEBUG("Unable to encode rrdata (data: ~p)", [Data]),
   {}.

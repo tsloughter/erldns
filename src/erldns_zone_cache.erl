@@ -22,6 +22,7 @@
 -behavior(gen_server).
 
 -include_lib("dns/include/dns.hrl").
+-include_lib("kernel/include/logger.hrl").
 -include("erldns.hrl").
 
 -export([start_link/0]).
@@ -209,7 +210,7 @@ init([]) ->
 % gen_server callbacks
 
 handle_call(Message, _From, State) ->
-  lager:debug("Received unsupported call (message: ~p)", [Message]),
+  ?LOG_DEBUG("Received unsupported call (message: ~p)", [Message]),
   {reply, ok, State}.
 
 handle_cast({delete, Name}, State) ->
@@ -217,7 +218,7 @@ handle_cast({delete, Name}, State) ->
   {noreply, State};
 
 handle_cast(Message, State) ->
-  lager:debug("Received unsupported cast (message: ~p)", [Message]),
+  ?LOG_DEBUG("Received unsupported cast (message: ~p)", [Message]),
   {noreply, State}.
 
 handle_info(_Message, State) ->
@@ -275,7 +276,7 @@ build_named_index(Records) ->
 sign_zone(Zone = #zone{keysets = []}) ->
   Zone;
 sign_zone(Zone) ->
-  lager:debug("Signing zone (name: ~p)", [Zone#zone.name]),
+  ?LOG_DEBUG("Signing zone (name: ~p)", [Zone#zone.name]),
   DnskeyRRs = lists:filter(erldns_records:match_type(?DNS_TYPE_DNSKEY), Zone#zone.records),
   KeyRRSigRecords = lists:flatten(lists:map(erldns_dnssec:key_rrset_signer(Zone#zone.name, DnskeyRRs), Zone#zone.keysets)),
 
@@ -287,16 +288,16 @@ sign_zone(Zone) ->
 
 -spec(verify_zone(erldns:zone(), [dns:rr()], [dns:rr()]) -> boolean()).
 verify_zone(Zone, DnskeyRRs, KeyRRSigRecords) ->
-  lager:debug("Verify zone (name: ~p)", [Zone#zone.name]),
+  ?LOG_DEBUG("Verify zone (name: ~p)", [Zone#zone.name]),
   case lists:filter(fun(RR) -> RR#dns_rr.data#dns_rrdata_dnskey.flags =:= 257 end, DnskeyRRs) of
     [] -> false;
     KSKs -> 
-      lager:debug("KSKs: ~p", [KSKs]),
+      ?LOG_DEBUG("KSKs: ~p", [KSKs]),
       KSKDnskey = lists:last(KSKs),
       RRSig = lists:last(KeyRRSigRecords),
-      lager:debug("Attempting to verify RRSIG (key: ~p)", [KSKDnskey]),
+      ?LOG_DEBUG("Attempting to verify RRSIG (key: ~p)", [KSKDnskey]),
       VerifyResult = dnssec:verify_rrsig(RRSig, DnskeyRRs, [KSKDnskey], []),
-      lager:debug("KSK verification (verified?: ~p)", [VerifyResult]),
+      ?LOG_DEBUG("KSK verification (verified?: ~p)", [VerifyResult]),
       VerifyResult
   end.
 

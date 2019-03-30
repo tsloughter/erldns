@@ -17,6 +17,7 @@
 -module(erldns_encoder).
 
 -include_lib("dns/include/dns_records.hrl").
+-include_lib("kernel/include/logger.hrl").
 
 -export([encode_message/1, encode_message/2]).
 
@@ -34,7 +35,7 @@ encode_message(Response) ->
         M -> M
       catch
         Exception:Reason ->
-          lager:error("Error encoding (response: ~p, exception: ~p, reason: ~p)", [Response, Exception, Reason]),
+          ?LOG_ERROR("Error encoding (response: ~p, exception: ~p, reason: ~p)", [Response, Exception, Reason]),
           encode_message(build_error_response(Response))
       end
   end.
@@ -58,7 +59,7 @@ encode_message(Response, Opts) ->
         M -> M
       catch
         Exception:Reason ->
-          lager:error("Error encoding with truncation (response: ~p, exception: ~p, reason: ~p)", [Response, Exception, Reason]),
+          ?LOG_ERROR("Error encoding with truncation (response: ~p, exception: ~p, reason: ~p)", [Response, Exception, Reason]),
           {false, encode_message(build_error_response(Response))}
       end
   end.

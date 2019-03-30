@@ -17,6 +17,7 @@
 -module(erldns_decoder).
 
 -include_lib("dns/include/dns_records.hrl").
+-include_lib("kernel/include/logger.hrl").
 
 -export([decode_message/1]).
 
@@ -34,7 +35,7 @@ decode_message(Bin) ->
         M -> M
       catch
         Exception:Reason ->
-          lager:error("Error decoding message (data: ~p, exception: ~p, reason: ~p)", [Bin, Exception, Reason]),
+          ?LOG_ERROR("Error decoding message (data: ~p, exception: ~p, reason: ~p)", [Bin, Exception, Reason]),
           {formerr, Reason, Bin}
       end
   end.
