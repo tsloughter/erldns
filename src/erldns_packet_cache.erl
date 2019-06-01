@@ -60,14 +60,14 @@ get(Key, _Host) ->
     [{Key, {Response, ExpiresAt}}] ->
       case timestamp() > ExpiresAt of
         true ->
-          folsom_metrics:notify(cache_expired_meter, 1),
+          %% folsom_metrics:notify(cache_expired_meter, 1),
           {error, cache_expired};
         false ->
-          folsom_metrics:notify(cache_hit_meter, 1),
+          %% folsom_metrics:notify(cache_hit_meter, 1),
           {ok, Response}
       end;
     _ ->
-      folsom_metrics:notify(cache_miss_meter, 1),
+      %% folsom_metrics:notify(cache_miss_meter, 1),
       {error, cache_miss}
   end.
 

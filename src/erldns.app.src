@@ -10,8 +10,6 @@
                   jsx,
                   ssl,
                   mnesia,
-                  bear,
-                  folsom,
                   iso8601]},
   {start_phases, [{post_start, []}]}
   ]}.

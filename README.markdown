@@ -82,9 +82,7 @@ erldns_zone_cache:put_zone({
 
 ## Metrics
 
-Folsom is used to gather runtime metrics and statistics.
-
-There is an HTTP API for querying metric data available at https://github.com/dnsimple/erldns-metrics
+OpenCensus is used to gather runtime metrics and statistics.
 
 ## Admin
 

@@ -23,7 +23,7 @@
 
 start(_Type, _Args) ->
   ?LOG_DEBUG("Starting erldns application"),
-  setup_metrics(),
+  %% setup_metrics(),
   erldns_sup:start_link().
 
 start_phase(post_start, _StartType, _PhaseArgs) ->
