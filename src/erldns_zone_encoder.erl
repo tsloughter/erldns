@@ -24,6 +24,7 @@
 
 -export([start_link/0]).
 -export([zone_to_json/1, register_encoders/1, register_encoder/1]).
+-export([encode_record/1, encode_record_json/1, encode_data_json/1]).
 
 % Gen server hooks
 -export([init/1,
@@ -180,6 +181,53 @@ encode_record(Name, Type, Ttl, Data) ->
    {<<"content">>, encode_data(Data)}
   ].
 
+encode_record_json({dns_rr, Name, _, Type = ?DNS_TYPE_SOA, Ttl, Data}) ->
+  encode_record_json(Name, Type, Ttl, Data);
+encode_record_json({dns_rr, Name, _, Type = ?DNS_TYPE_NS, Ttl, Data}) ->
+  encode_record_json(Name, Type, Ttl, Data);
+encode_record_json({dns_rr, Name, _, Type = ?DNS_TYPE_A, Ttl, Data}) ->
+  encode_record_json(Name, Type, Ttl, Data);
+encode_record_json({dns_rr, Name, _, Type = ?DNS_TYPE_AAAA, Ttl, Data}) ->
+  encode_record_json(Name, Type, Ttl, Data);
+encode_record_json({dns_rr, Name, _, Type = ?DNS_TYPE_CNAME, Ttl, Data}) ->
+  encode_record_json(Name, Type, Ttl, Data);
+encode_record_json({dns_rr, Name, _, Type = ?DNS_TYPE_MX, Ttl, Data}) ->
+  encode_record_json(Name, Type, Ttl, Data);
+encode_record_json({dns_rr, Name, _, Type = ?DNS_TYPE_HINFO, Ttl, Data}) ->
+  encode_record_json(Name, Type, Ttl, Data);
+encode_record_json({dns_rr, Name, _, Type = ?DNS_TYPE_TXT, Ttl, Data}) ->
+  encode_record_json(Name, Type, Ttl, Data);
+encode_record_json({dns_rr, Name, _, Type = ?DNS_TYPE_SPF, Ttl, Data}) ->
+  encode_record_json(Name, Type, Ttl, Data);
+encode_record_json({dns_rr, Name, _, Type = ?DNS_TYPE_SSHFP, Ttl, Data}) ->
+  encode_record_json(Name, Type, Ttl, Data);
+encode_record_json({dns_rr, Name, _, Type = ?DNS_TYPE_SRV, Ttl, Data}) ->
+  encode_record_json(Name, Type, Ttl, Data);
+encode_record_json({dns_rr, Name, _, Type = ?DNS_TYPE_NAPTR, Ttl, Data}) ->
+  encode_record_json(Name, Type, Ttl, Data);
+encode_record_json({dns_rr, Name, _, Type = ?DNS_TYPE_CAA, Ttl, Data}) ->
+  encode_record_json(Name, Type, Ttl, Data);
+encode_record_json({dns_rr, Name, _, Type = ?DNS_TYPE_DS, Ttl, Data}) ->
+  encode_record_json(Name, Type, Ttl, Data);
+encode_record_json({dns_rr, Name, _, Type = ?DNS_TYPE_CDS, Ttl, Data}) ->
+  encode_record_json(Name, Type, Ttl, Data);
+encode_record_json({dns_rr, Name, _, Type = ?DNS_TYPE_DNSKEY, Ttl, Data}) ->
+  encode_record_json(Name, Type, Ttl, Data);
+encode_record_json({dns_rr, Name, _, Type = ?DNS_TYPE_CDNSKEY, Ttl, Data}) ->
+  encode_record_json(Name, Type, Ttl, Data);
+encode_record_json({dns_rr, Name, _, Type = ?DNS_TYPE_RRSIG, Ttl, Data}) ->
+  encode_record_json(Name, Type, Ttl, Data);
+encode_record_json(Record) ->
+  ?LOG_WARNING("Unable to encode record (record: ~p)", [Record]),
+  [].
+
+encode_record_json(Name, Type, Ttl, Data) ->
+  [
+   {<<"name">>, erlang:iolist_to_binary(io_lib:format("~s", [Name]))},
+   {<<"type">>, dns:type_name(Type)},
+   {<<"ttl">>, Ttl},
+   {<<"content">>, encode_data_json(Data)}
+  ].
 
 try_custom_encoders(_Record, []) ->
   {};
@@ -189,6 +237,35 @@ try_custom_encoders(Record, [Encoder|Rest]) ->
     [] -> try_custom_encoders(Record, Rest);
     EncodedData -> EncodedData
   end.
+
+-define(R2J(Record), encode_data_json(#Record{} = Rec) ->
+               lists:zipwith(fun(Key, Value) ->
+                                     {Key, encode_data_json_(Key, Value)}
+                             end, record_info(fields, Record), tl(tuple_to_list(Rec)))).
+
+encode_data_json_(ip, IP) ->
+    list_to_binary(inet:ntoa(IP));
+encode_data_json_(_, V) ->
+    V.
+
+?R2J(dns_rrdata_soa);
+?R2J(dns_rrdata_ns);
+?R2J(dns_rrdata_a);
+?R2J(dns_rrdata_aaaa);
+?R2J(dns_rrdata_caa);
+?R2J(dns_rrdata_cname);
+?R2J(dns_rrdata_mx);
+?R2J(dns_rrdata_hinfo);
+?R2J(dns_rrdata_txt);
+?R2J(dns_rrdata_spf);
+?R2J(dns_rrdata_sshfp);
+?R2J(dns_rrdata_srv);
+?R2J(dns_rrdata_naptr);
+?R2J(dns_rrdata_ds);
+?R2J(dns_rrdata_cds);
+?R2J(dns_rrdata_dnskey);
+?R2J(dns_rrdata_cdnskey);
+?R2J(dns_rrdata_rrsig).
 
 encode_data({dns_rrdata_soa, Mname, Rname, Serial, Refresh, Retry, Expire, Minimum}) ->
   erlang:iolist_to_binary(io_lib:format("~s. ~s. (~w ~w ~w ~w ~w)", [Mname, Rname, Serial, Refresh, Retry, Expire, Minimum]));

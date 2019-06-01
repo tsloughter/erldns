@@ -26,7 +26,9 @@
          zone_to_erlang/1,
          register_parsers/1,
          register_parser/1,
-         list_parsers/0
+         list_parsers/0,
+         json_record_to_list/1,
+         json_record_to_erlang/1
         ]).
 
 % Gen server hooks

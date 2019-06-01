@@ -37,7 +37,8 @@
          get_delegations/1,
          get_records_by_name/1,
          in_zone/1,
-         zone_names_and_versions/0
+         zone_names_and_versions/0,
+         build_named_index/1
         ]).
 
 % Write APIs
